@@ -87,3 +87,10 @@ boot.ci(results, type="norm", index=4) # m >60
 # get 95% confidence intervals from the regression model
 confint(model1)
 
+
+#use gglot to graph the linear model
+g = ggplot(data = ce621)
+g = g+
+  geom_point(aes(x=agegen, y=residuals))+
+  geom_smooth(method = "lm", se = FALSE)+
+  lab(title = "Residuals")
