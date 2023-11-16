@@ -132,6 +132,20 @@ g + geom_line(aes(x = age, y=model4$fitted.values), color="red", linewidth=1.4)
 #compare this multi-splined model to the linear model
 anova(model2, model4)
 
-#do AIC comparison for the 3.
+#do AIC comparison for the 3 models.
 AIC(model2, model3, model4)
 
+#use glm to create the 3 models
+model2g = glm(weight~age, data=nepaldata)
+model3g = glm(weight~as.factor(age), data=nepaldata)
+model4g = glm(weight~age+age_sp1+age_sp2+age_sp3, data=nepaldata)
+
+#get the log-likelihoods from the glm models
+logLik(model2g)
+logLik(model3g)
+logLik(model4g)
+
+#AIC
+AIC(model2g)-2
+AIC(model3g)-2
+AIC(model4g)-2
