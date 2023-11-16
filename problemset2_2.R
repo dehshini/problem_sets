@@ -31,15 +31,8 @@ confint(model1)
 modelA = lm(weight ~ age + gender + age:gender, data=nepaldata)
 summary(modelA)
 
-#fit a line for the fitted values for for model A(there will be 2, one for males and females)
-qplot(x=jitter(age), y=weight, color=gender, shape=gender, data=nepaldata,
-      xlab="Age in months", ylab="Weight in kg") +
-  geom_line(aes(x = age, y=modelA$fitted.values, color=gender))
-
+#fit a line for the fitted values for model A(there will be 2, one for males and females)
 #plot the residuals on y and predictor on x
-qplot(y=modelA$residuals, x=jitter(age), color=gender, shape=gender,
-      data=nepalData, ylab="Residuals", xlab="Age in months")
-
 #use gg
 res_v_x = ggplot(data = nepaldata)
 res_v_x = res_v_x +
@@ -61,10 +54,6 @@ summary(modelB)
 confint(modelB)
 
 #plot the fitted values from modelB against age
-qplot(x=jitter(age), y=weight, color=gender, shape=gender,
-      data=nepaldata, xlab="Age in months", ylab="Weight in kg") +
-  geom_line(aes(x = age, y=modelB$fitted.values, color=gender))
-
 #use ggplot
 gB = ggplot(nepaldata, aes(x=age, y=weight))
 gB = gB + geom_point(aes(shape=gender, colour=gender), position = "jitter") + 
