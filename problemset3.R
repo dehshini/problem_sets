@@ -84,5 +84,44 @@ confint(model1)
 
 #second part
 
+#Create two age groups (< 3 years, ≥ 3 years).
+nepal = nepal %>%
+  mutate(agegp = ifelse(age == "3 to 4", "3+ years", "<3 years"))
 
+#calculate odds
+nepal %>%
+  group_by(agegp, trt) %>%
+  summarize(N_Alive = sum(status=="Alive"),
+            N_Died = sum(status=="Died"),
+            Odds = N_Died/N_Alive)
 
+#calculate OR of death for plac vs vitA
+nepal %>%
+  group_by(agegp) %>%
+  summarize(N_Alive_P = sum(status=="Alive" & trt=="Placebo"),
+            N_Died_P = sum(status=="Died" & trt=="Placebo"),
+            N_Alive_V = sum(status=="Alive" & trt=="Vit A"),
+            N_Died_V = sum(status=="Died" & trt=="Vit A"),
+            OR = (N_Died_P/N_Alive_P)/(N_Died_V/N_Alive_V),
+            se = sqrt(1/N_Alive_P + 1/N_Died_P + 1/N_Alive_V + 1/N_Died_V),
+            CI_L = exp(log(OR)-1.96*se),
+            CI_U = exp(log(OR)+1.96*se))
+
+#create a dataframe for the low age group
+nepal621.lowage = nepal %>% filter(agegp == "<3 years")
+
+#fit a model
+model2 = glm(as.factor(status) ~ trt, data=nepal621.lowage,
+             family=binomial(link="logit"))
+summary(model2) # This summary is on the logOR scale
+exp(model2$coefficients) # We exponentiate to get on the OR scale
+exp(confint(model2))
+
+#create data frame for the high age group
+nepal621.highage = nepal %>% filter(agegp == "3+ years")
+
+model3 = glm(as.factor(status) ~ trt, data=nepal621.highage,
+             family=binomial(link="logit"))
+summary(model3)
+exp(model3$coefficients)
+exp(confint(model3))
