@@ -61,7 +61,7 @@ nepal %>%
             CI_L = diff - 1.96*se,
             CI_U = diff + 1.96*se)
 
-
+#save the above as a new dataframe
 dataForCIplot = nepal %>%
   group_by(sex, age) %>%
   summarize(N_Plac = sum(trt=="Placebo"),
@@ -72,15 +72,38 @@ dataForCIplot = nepal %>%
             se = sqrt(p_Plac*(1 - p_Plac)/N_Plac + p_VitA*(1 - p_VitA)/N_VitA),
             CI_L = diff - 1.96*se,
             CI_U = diff + 1.96*se)
-agestrata = c(1,2,3,4,5,6,7)
-agestrata_labels = c("F < 1", "F 1-2", "F 3-4", "M < 1", "M 1-2", "M 3-4", "Overall")
-diff = c(dataForCIplot$diff, 0.0047)
-#more code to come.may use ggplot
+
+#concatenate the overall values(diff, UL, LL, se) into new lists with the grouped data
+diffg = c(dataForCIplot$diff, 0.0047)
+LLg = c(dataForCIplot$CI_L, 0.00142)
+ULg = c(dataForCIplot$CI_U, 0.00798)
+se_g = c(dataForCIplot$se, se)
+
+#create a new dataframe for the plot using the lists created
+df = data_frame(sex=c(dataForCIplot$sex, "overall"),
+                age=c(dataForCIplot$age, "overall"),
+                diff=diffg, 
+                se=se_g, 
+                LL = LLg,
+                UL = ULg)
+
+#plot: create error plots
+g2 = ggplot(df, aes(x=sex , y=diff, ymin=LL, ymax=UL))
+
+g2 + geom_errorbar(aes(color=age), position = position_dodge(0.3), width = 0.3) +
+  geom_point(aes(color=age, size=0.5, shape=age), position = position_dodge(0.3)) +
+  geom_hline(aes(yintercept=0), color="black") +
+  xlab("gender/age group") +
+  ylab("difference in mortality rate (placebo - vitA)") +
+  theme_minimal()+
+  labs(title = "95% Confidence Intervals for Difference in Mortality Rates")
 
 #fit a model on the data
 model1 = glm(as.factor(status) ~ trt, data=nepal, family=binomial(link="identity"))
 summary(model1)
 confint(model1)
+svycontrast(model1, c(1,1))
+confint(svycontrast(model1, c(1,1)))
 
 #second part
 
