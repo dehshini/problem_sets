@@ -133,8 +133,8 @@ nepal %>%
 #create a dataframe for the low age group
 nepal621.lowage = nepal %>% filter(agegp == "<3 years")
 
-#fit a model
-model2 = glm(as.factor(status) ~ trt, data=nepal621.lowage,
+#fit a model for the lowage group
+model2 = glm(factor(status) ~ trt, data=nepal621.lowage,
              family=binomial(link="logit"))
 summary(model2) # This summary is on the logOR scale
 exp(model2$coefficients) # We exponentiate to get on the OR scale
@@ -143,7 +143,8 @@ exp(confint(model2))
 #create data frame for the high age group
 nepal621.highage = nepal %>% filter(agegp == "3+ years")
 
-model3 = glm(as.factor(status) ~ trt, data=nepal621.highage,
+#fit a model for the high age group
+model3 = glm(factor(status) ~ trt, data=nepal621.highage,
              family=binomial(link="logit"))
 summary(model3)
 exp(model3$coefficients)
