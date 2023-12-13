@@ -109,9 +109,9 @@ g4+geom_point()+
   theme_minimal()
 
 #Hosmer-Lemeshow goodness of fit test
-hoslem.test(nepalibf$bf, nepalibf$phat, g=10)
-hoslem.test(nepalibf$bf, nepalibf$phat)$observed
-hoslem.test(nepalibf$bf, nepalibf$phat)$expected
-
+hos = hoslem.test(nepalibf$bf, nepalibf$phat, g=10)
 hos
+hos$observed
+hos$expected
+
 
