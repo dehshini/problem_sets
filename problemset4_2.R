@@ -1,4 +1,7 @@
 #tidyverse
+library(tidyverse)
+library(ResourceSelection)
+
 #load the dataset as nepalibf
 nepalibf = read_csv("datasets/nepalibf.csv")
 head(nepalibf)
@@ -17,41 +20,29 @@ nepalibf %>%
             median_p=median(parity),
             iqr_p=IQR(parity))
 
-# create plots for this
-f1 = ggplot(data=bf_app)
-f1 + geom_boxplot(aes(x=breastfeeding, y=age_chld, color=breastfeeding), size=0.5) + 
-  ylab("child age(months)")+ 
-  theme_minimal() 
-f1 + geom_boxplot(aes(x=breastfeeding, y=age_mom, color=breastfeeding), size=0.5) +
-  ylab("age of mom (years)") +
-  theme_minimal()
-f1 + geom_boxplot(aes(x=breastfeeding, y=parity, color=breastfeeding), size=0.5) +
-  ylab("parity") +
-  theme_minimal()
-
-#try for less than 2 years olds
-bf_app2 = nepalibf %>% 
-  filter(age_chld<24) %>% 
-  na.omit()
-
-# create plots for this
-f2 = ggplot(data=bf_app2)
-f2 + geom_boxplot(aes(x=breastfeeding, y=age_chld, color=breastfeeding), size=0.5) + 
-  ylab("child age(months)")+ 
-  theme_minimal() 
-f2 + geom_boxplot(aes(x=breastfeeding, y=age_mom, color=breastfeeding), size=0.5) +
-  ylab("age of mom (years)") +
-  theme_minimal()
-f2 + geom_boxplot(aes(x=breastfeeding, y=parity, color=breastfeeding), size=0.5) +
-  ylab("parity") +
-  theme_minimal()
-
 #omit NAs
 #create binary gender variable, breastfeeding variable
 nepalibf = nepalibf %>% 
   na.omit() %>% 
   mutate(gender = if_else(sex_chld==1, "female", "male"), 
          breastfeeding = if_else(bf==1, "yes", "no"))
+
+#try for less than 2 years olds
+#bf_app2 = nepalibf %>% 
+#  filter(age_chld<24) %>% 
+#  na.omit()
+
+# create plots for this
+#f2 = ggplot(data=bf_app2)
+#f2 + geom_boxplot(aes(x=breastfeeding, y=age_chld, color=breastfeeding), size=0.5) + 
+#  ylab("child age(months)")+ 
+#  theme_minimal() 
+#f2 + geom_boxplot(aes(x=breastfeeding, y=age_mom, color=breastfeeding), size=0.5) +
+#   ylab("age of mom (years)") +
+#   theme_minimal()
+# f2 + geom_boxplot(aes(x=breastfeeding, y=parity, color=breastfeeding), size=0.5) +
+#   ylab("parity") +
+#   theme_minimal()
 
 #create ggplots
 g1 = ggplot(data=nepalibf)
