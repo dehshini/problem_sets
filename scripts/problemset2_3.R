@@ -45,6 +45,13 @@ table1 <- pbctrial %>%
         p_hist4 = sum(histo == 4) / n * 100
     )
 
+#summarize the agecat variable within druggroup and give proportions
+pbctrial %>% 
+    group_by(drug, agecat) %>% 
+    summarise(
+        n = n()
+    )
+
 #transpose table
 table2 <- t(table1[, -1])
 table2 <- as.data.frame(table2)
@@ -60,10 +67,22 @@ ggpairs(pbctrial1[, c("ageyr", "sex", "bil", "death", "drug", "histo")])
 hist(pbctrial$ageyr)
 hist(pbctrial$bil)
 
+#categorize bil
+pbctrial <- pbctrial %>% 
+    mutate(bil_gt_3 = ifelse(bil < 3.45, 0, 1))
+
+#count bil_gt_3 numbers
+pbctrial %>% 
+    group_by(drug, bil_gt_3) %>% 
+    summarise(
+        n = n()
+    )
+
+
 #set survival object
 pbctrial$survival <- with(pbctrial, Surv(survyr, death == 1))
 
-#estimate survival curves
+#estimate survival curve, overall
 km.all <- survfit(
     survival ~ 1,
     data = pbctrial,
@@ -71,7 +90,6 @@ km.all <- survfit(
     conf.int = 0.95,
     type = "kaplan-meier"
 )
-km.all
 summary(km.all)
 
 #estimate survival curves for drug group
@@ -82,9 +100,9 @@ km.drug <- survfit(
     type = "kaplan-meier",
     conf.int = 0.95
 )
-km.drug
 summary(km.drug)
 
+#estimate survival curves for sex group
 km.sex <- survfit(
     survival ~ sex,
     data = pbctrial,
@@ -92,19 +110,20 @@ km.sex <- survfit(
     type = "kaplan-meier",
     conf.int = 0.95
 )
-km.sex
 summary(km.sex)
 
+#estimate survival curves for bil group
+#may not make sense to include
 km.bil <- survfit(
-    survival ~ bil,
+    survival ~ bil_gt_3,
     data = pbctrial,
     conf.type = "log-log",
     type = "kaplan-meier",
     conf.int = 0.95
 )
-km.bil
 summary(km.bil)
 
+#estimate survival curves for histo group
 km.histo <- survfit(
     survival ~ factor(histo),
     data = pbctrial,
@@ -112,31 +131,75 @@ km.histo <- survfit(
     type = "kaplan-meier",
     conf.int = 0.95
 )
-km.histo
 summary(km.histo)
 
-km.age  <- survfit(
+#estimate survival curves for age group
+km.agecat  <- survfit(
     survival ~ agecat,
     data = pbctrial,
     conf.type = "log-log",
     type = "kaplan-meier",
     conf.int = 0.95
 )
-km.age
-summary(km.age)
+summary(km.agecat)
 
 #plot survival curves
 #autoplot
 autoplot(km.all)
-autoplot(km.drug)
+autoplot(km.drug) +
+    labs(
+        title = "Survival curves by drug group",
+        x = "Time (years)",
+        y = "Survival probability"
+    ) +
+        theme(plot.title = element_text(hjust = 0.5))
+
+ggsurvplot(km.drug,
+    legend = "right",
+    legend.title = "Drug",
+    legend.labs = c("Placebo", "DPCA")
+)
+
+
+
+
 autoplot(km.sex)
-autoplot(km.bil)
+autoplot(km.bil) #now making sense after categorizing.
 autoplot(km.histo)
-autoplot(km.age)
+autoplot(km.agecat)
+
+#create the plot for the drug group
+ggsurvplot(
+    km.drug, 
+    data = pbctrial, 
+    conf.int = TRUE,
+    pval = TRUE,
+    legend = "bottom",
+    legend.title = "Drug",
+    legend.labs = c("Placebo", "DPCA"),
+    )
+
+km.drugadj <- survfit(
+    survival ~ agecat+sex+factor(histo)+drug+bil_gt_3,
+    data = pbctrial,
+    conf.type = "log-log",
+    type = "kaplan-meier",
+    conf.int = 0.95,
+    strata = drug
+)
+summary(km.agecat)
+
+
+
 
 #check if survival curves are similar
 # log rank test for equality of survivor functions
-survdiff(survival ~ drug + sex + bil + factor(histo), data = pbctrial)
+survdiff(survival ~ drug, data = pbctrial) # not significant, p=0.7
+survdiff(survival ~ sex, data = pbctrial) ## significant p=0.04
+survdiff(survival ~ factor(histo), data = pbctrial) #significant p=1e-11
+survdiff(survival ~ agecat, data = pbctrial) #significant p=0.002
+survdiff(survival ~ bil_gt_3, data = pbctrial)#significant p=<2e-16
+
 
 # complimentary log-log plots
 plot(
@@ -145,15 +208,38 @@ plot(
     col=c("red", "blue"),
     lwd=2
 )
+#looks proportional
 
 plot(
     km.sex,
     fun = "cloglog",
     col = c("red", "blue"),
-    lwd = 2)
+    lwd = 2
+)
+#kinda proportional
 
+plot(
+    km.histo,
+    fun = "cloglog",
+    col = c("red", "blue", "green", "orange"),
+    lwd = 2
+)
+#weird looking
 
-
+plot(
+    km.agecat,
+    fun = "cloglog",
+    col = c("red", "blue", "green"),
+    lwd = 2
+)
+#looks proportional
+plot(
+    km.bil,
+    fun = "cloglog",
+    col = c("red", "blue"),
+    lwd = 2
+)
+#looks proportional
 
 ###############
 #fit cox models
@@ -161,19 +247,41 @@ plot(
 # model1. survival on drug
 model1 <- coxph(survival ~ drug, data = pbctrial)
 summary(model1)
-tidy(model1)
+tidy(model1) #not significant
+
+model1b <- coxph(survival ~ sex, data = pbctrial)
+summary(model1b)
+tidy(model1b) #significant
+
+model1c <- coxph(survival ~ factor(histo), data = pbctrial)
+summary(model1c)
+tidy(model1c) #significant
+
+model1d <- coxph(survival ~ agecat, data = pbctrial)
+summary(model1d)
+tidy(model1d) #significant
+
+model1e <- coxph(survival ~ factor(bil_gt_3), data = pbctrial)
+summary(model1e)
+tidy(model1e) #significant
 
 # model2. survival on sex, bilirubin level, and histological stage
-model2 <- coxph(survival ~ sex + bil + factor(histo), data = pbctrial)
+model2 <- coxph(survival ~ drug + sex + bil_gt_3 + factor(histo), data = pbctrial)
 summary(model2)
 tidy(model2)
+AIC(model2) #1168
 
 #model3. survival on drug, sex, bilirubin level, and histological stage
-model3 <- coxph(survival ~ drug + sex + bil + factor(histo), data = pbctrial)
+model3 <- coxph(survival ~ drug + sex + bil_gt_3 + factor(histo) + agecat, data = pbctrial)
 summary(model3)
 tidy(model3)
+AIC(model3) #1165
 
-#model4. survival on drug, sex, bilirubin level, and histological stage, with strata
-model4 <- coxph(survival ~ drug + sex + bil + factor(histo) + strata(drug), data = pbctrial)
+#model4. survival on drug, sex, bilirubin level, and histological stage
+model4 <- coxph(survival ~ drug + bil_gt_3, data = pbctrial)
 summary(model4)
 tidy(model4)
+AIC(model4) #1199
+
+#select model 3 based on AIC
+
